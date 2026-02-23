@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+  html, body {
+    background-color: #090914;
+    color: #FFFFFF;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+  }
+  body { min-height: 100dvh; }
+  #root { min-height: 100dvh; display: flex; flex-direction: column; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(124, 92, 252, 0.3); border-radius: 2px; }
+}
+
+@layer components {
+  .glass-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 20px;
+  }
+  .neon-gradient {
+    background: linear-gradient(135deg, #7C5CFC 0%, #00D4FF 100%);
+  }
+  .neon-gradient-text {
+    background: linear-gradient(135deg, #7C5CFC 0%, #00D4FF 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .green-gradient {
+    background: linear-gradient(135deg, #00C896 0%, #00D4FF 100%);
+  }
+  .mobile-container {
+    max-width: 430px;
+    margin: 0 auto;
+    min-height: 100dvh;
+    position: relative;
+    overflow-x: hidden;
+  }
+  .screen-padding {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .bottom-safe {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+  .input-field {
+    @apply w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3.5 text-white placeholder-white/30
+    focus:outline-none focus:border-neon-purple/50 transition-all duration-200 text-sm;
+  }
+  .btn-primary {
+    @apply w-full py-4 rounded-2xl font-semibold text-white text-sm
+    bg-gradient-to-r from-neon-purple to-neon-blue
+    hover:opacity-90 active:scale-95 transition-all duration-200
+    disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .tab-bar {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 430px;
+    z-index: 50;
+    background: rgba(9, 9, 20, 0.9);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+}
