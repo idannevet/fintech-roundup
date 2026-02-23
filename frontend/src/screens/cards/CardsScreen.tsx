@@ -57,8 +57,8 @@ export default function CardsScreen() {
 
   const handleToggle = async (id: string) => {
     try {
-      const updated = await cardsService.toggleCard(id);
-      setCards(cards.map(c => c.id === id ? updated : c));
+      const { is_active } = await cardsService.toggleCard(id);
+      setCards(cards.map(c => c.id === id ? { ...c, is_active } : c));
     } catch { toast.error('Failed to toggle card'); }
   };
 
