@@ -9,5 +9,6 @@ router.get('/', transferController.getTransfers);
 router.post('/', transferController.createTransfer);
 router.get('/virtual-card', transferController.getVirtualCard);
 router.get('/investment', transferController.getInvestment);
+router.put('/investment/risk', transferController.updateRiskLevel);
 
 export default router;

@@ -115,6 +115,7 @@ export function initDB(): void {
       balance REAL DEFAULT 0,
       total_invested REAL DEFAULT 0,
       return_percent REAL DEFAULT 0,
+      risk_level TEXT DEFAULT 'moderate',
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -125,11 +126,40 @@ export function initDB(): void {
       user_id TEXT UNIQUE NOT NULL,
       is_enabled INTEGER DEFAULT 1,
       rounding_unit REAL DEFAULT 1,
+      multiplier INTEGER DEFAULT 1,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS goals (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      emoji TEXT DEFAULT '🎯',
+      target_amount REAL NOT NULL,
+      current_amount REAL DEFAULT 0,
+      deadline TEXT,
+      is_completed INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS recurring_deposits (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      amount REAL NOT NULL,
+      frequency TEXT NOT NULL,
+      next_date TEXT NOT NULL,
+      is_active INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
   `);
+
+  // Migrations for existing installs
+  try { db.exec(`ALTER TABLE rounding_configs ADD COLUMN multiplier INTEGER DEFAULT 1`); } catch {}
+  try { db.exec(`ALTER TABLE investment_portfolios ADD COLUMN risk_level TEXT DEFAULT 'moderate'`); } catch {}
 }
 
 export default db;

@@ -16,13 +16,19 @@ const ROUNDING_OPTIONS = [
   { value: 100, label: '₪100', desc: 'e.g. ₪67.00 → save ₪33.00' },
 ];
 
+const MULTIPLIER_OPTIONS = [
+  { value: 1, label: '1×', desc: 'Standard round-up' },
+  { value: 2, label: '2×', desc: 'Double your savings' },
+  { value: 3, label: '3×', desc: 'Triple your savings' },
+];
+
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.07 } } };
 const item = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } };
 
 export default function SettingsScreen() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
-  const [config, setConfig] = useState<RoundingConfig>({ is_enabled: true, rounding_unit: 1 });
+  const [config, setConfig] = useState<RoundingConfig>({ is_enabled: true, rounding_unit: 1, multiplier: 1 });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -98,24 +104,50 @@ export default function SettingsScreen() {
         </div>
 
         {config.is_enabled && !loading && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
-            <p className="text-text-secondary text-xs uppercase tracking-wider font-medium">Round up to nearest:</p>
-            <div className="grid grid-cols-3 gap-2">
-              {ROUNDING_OPTIONS.map(opt => (
-                <button key={opt.value} onClick={() => saveConfig({ rounding_unit: opt.value })}
-                  className={`py-3 rounded-2xl text-center transition-all ${
-                    config.rounding_unit === opt.value
-                      ? 'neon-gradient text-white shadow-glow-purple'
-                      : 'bg-white/5 border border-white/10 text-text-secondary hover:border-neon-purple/30'}`}>
-                  <div className="font-bold text-sm">{opt.label}</div>
-                </button>
-              ))}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+            <div className="space-y-3">
+              <p className="text-text-secondary text-xs uppercase tracking-wider font-medium">Round up to nearest:</p>
+              <div className="grid grid-cols-3 gap-2">
+                {ROUNDING_OPTIONS.map(opt => (
+                  <button key={opt.value} onClick={() => saveConfig({ rounding_unit: opt.value })}
+                    className={`py-3 rounded-2xl text-center transition-all ${
+                      config.rounding_unit === opt.value
+                        ? 'neon-gradient text-white shadow-glow-purple'
+                        : 'bg-white/5 border border-white/10 text-text-secondary hover:border-neon-purple/30'}`}>
+                    <div className="font-bold text-sm">{opt.label}</div>
+                  </button>
+                ))}
+              </div>
+              <div className="rounded-2xl p-3 bg-neon-purple/5 border border-neon-purple/15">
+                <p className="text-text-secondary text-xs">
+                  <span className="text-neon-purple font-medium">Example: </span>
+                  {ROUNDING_OPTIONS.find(o => o.value === config.rounding_unit)?.desc}
+                </p>
+              </div>
             </div>
-            <div className="rounded-2xl p-3 bg-neon-purple/5 border border-neon-purple/15">
-              <p className="text-text-secondary text-xs">
-                <span className="text-neon-purple font-medium">Example: </span>
-                {ROUNDING_OPTIONS.find(o => o.value === config.rounding_unit)?.desc}
-              </p>
+
+            <div className="space-y-3">
+              <p className="text-text-secondary text-xs uppercase tracking-wider font-medium">Round-up multiplier:</p>
+              <div className="grid grid-cols-3 gap-2">
+                {MULTIPLIER_OPTIONS.map(opt => (
+                  <button key={opt.value} onClick={() => saveConfig({ multiplier: opt.value })}
+                    className={`py-3 rounded-2xl text-center transition-all ${
+                      config.multiplier === opt.value
+                        ? 'bg-gradient-to-br from-neon-green/30 to-neon-blue/20 border border-neon-green/50 text-neon-green shadow-[0_0_12px_rgba(0,200,150,0.2)]'
+                        : 'bg-white/5 border border-white/10 text-text-secondary hover:border-neon-green/30'}`}>
+                    <div className="font-black text-base">{opt.label}</div>
+                    <div className="text-[9px] mt-0.5 opacity-70">{opt.desc}</div>
+                  </button>
+                ))}
+              </div>
+              {config.multiplier > 1 && (
+                <div className="rounded-2xl p-3 bg-neon-green/5 border border-neon-green/15">
+                  <p className="text-text-secondary text-xs">
+                    <span className="text-neon-green font-medium">{config.multiplier}× active: </span>
+                    Each round-up is multiplied by {config.multiplier}
+                  </p>
+                </div>
+              )}
             </div>
           </motion.div>
         )}

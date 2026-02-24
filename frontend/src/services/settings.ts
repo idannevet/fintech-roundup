@@ -5,6 +5,7 @@ function mapConfig(d: any): RoundingConfig {
   return {
     is_enabled: d.isEnabled,
     rounding_unit: d.roundingUnit,
+    multiplier: d.multiplier ?? 1,
   };
 }
 
@@ -17,6 +18,7 @@ export const settingsService = {
     const res = await api.put('/settings/rounding', {
       isEnabled: data.is_enabled,
       roundingUnit: data.rounding_unit,
+      multiplier: data.multiplier,
     });
     return mapConfig(res.data);
   },

@@ -8,14 +8,19 @@ export const getRoundingConfig = (req: AuthRequest, res: Response): void => {
   res.json({
     isEnabled: !!config.is_enabled,
     roundingUnit: config.rounding_unit,
+    multiplier: config.multiplier ?? 1,
   });
 };
 
 export const updateRoundingConfig = (req: AuthRequest, res: Response): void => {
-  const { isEnabled, roundingUnit } = req.body;
+  const { isEnabled, roundingUnit, multiplier } = req.body;
 
   if (roundingUnit !== undefined && (roundingUnit <= 0 || roundingUnit > 1000)) {
     res.status(400).json({ error: 'Rounding unit must be between 1 and 1000' });
+    return;
+  }
+  if (multiplier !== undefined && ![1, 2, 3].includes(multiplier)) {
+    res.status(400).json({ error: 'Multiplier must be 1, 2, or 3' });
     return;
   }
 
@@ -23,16 +28,18 @@ export const updateRoundingConfig = (req: AuthRequest, res: Response): void => {
     UPDATE rounding_configs SET
       is_enabled = COALESCE(?, is_enabled),
       rounding_unit = COALESCE(?, rounding_unit),
+      multiplier = COALESCE(?, multiplier),
       updated_at = datetime('now')
     WHERE user_id = ?
   `).run(
     isEnabled !== undefined ? (isEnabled ? 1 : 0) : null,
     roundingUnit !== undefined ? roundingUnit : null,
+    multiplier !== undefined ? multiplier : null,
     req.user!.userId
   );
 
   const config = db.prepare('SELECT * FROM rounding_configs WHERE user_id = ?').get(req.user!.userId) as any;
-  res.json({ isEnabled: !!config.is_enabled, roundingUnit: config.rounding_unit });
+  res.json({ isEnabled: !!config.is_enabled, roundingUnit: config.rounding_unit, multiplier: config.multiplier ?? 1 });
 };
 
 export const updateProfile = (req: AuthRequest, res: Response): void => {

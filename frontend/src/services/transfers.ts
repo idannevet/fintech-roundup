@@ -50,7 +50,11 @@ export const transfersService = {
       balance: p.balance,
       total_invested: p.totalInvested,
       return_percent: p.returnPercent,
+      risk_level: p.riskLevel || 'moderate',
       created_at: p.updatedAt || '',
     };
+  },
+  async updateRiskLevel(riskLevel: 'conservative' | 'moderate' | 'aggressive'): Promise<void> {
+    await api.put('/transfers/investment/risk', { riskLevel });
   },
 };

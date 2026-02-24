@@ -68,10 +68,12 @@ export const simulateTransaction = (req: AuthRequest, res: Response): void => {
 
   const config = db.prepare('SELECT * FROM rounding_configs WHERE user_id = ?').get(userId) as any;
   const roundingUnit = config?.rounding_unit || 1;
+  const multiplier = config?.multiplier ?? 1;
   const isEnabled = config?.is_enabled !== 0;
 
   const mock = generateMockTransaction();
-  const roundupAmount = isEnabled ? calculateRoundup(mock.amount, roundingUnit) : 0;
+  const baseRoundup = isEnabled ? calculateRoundup(mock.amount, roundingUnit) : 0;
+  const roundupAmount = parseFloat((baseRoundup * multiplier).toFixed(2));
 
   const txId = uuidv4();
   db.prepare(`

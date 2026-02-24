@@ -13,6 +13,7 @@ import WalletScreen from './screens/wallet/WalletScreen';
 import TransactionsScreen from './screens/transactions/TransactionsScreen';
 import TransfersScreen from './screens/transfers/TransfersScreen';
 import SettingsScreen from './screens/settings/SettingsScreen';
+import GoalsScreen from './screens/goals/GoalsScreen';
 
 function LoadingScreen() {
   return (
@@ -65,6 +66,7 @@ export default function App() {
             <Route index element={<DashboardScreen />} />
             <Route path="cards" element={<CardsScreen />} />
             <Route path="wallet" element={<WalletScreen />} />
+            <Route path="goals" element={<GoalsScreen />} />
             <Route path="transactions" element={<TransactionsScreen />} />
             <Route path="transfers" element={<TransfersScreen />} />
             <Route path="settings" element={<SettingsScreen />} />

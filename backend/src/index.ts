@@ -12,6 +12,8 @@ import walletRoutes from './routes/wallet';
 import transactionRoutes from './routes/transactions';
 import transferRoutes from './routes/transfers';
 import settingsRoutes from './routes/settings';
+import goalsRoutes from './routes/goals';
+import recurringRoutes from './routes/recurring';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -40,6 +42,8 @@ app.use('/api/wallet', walletRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/transfers', transferRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/goals', goalsRoutes);
+app.use('/api/recurring', recurringRoutes);
 
 // Health check
 app.get('/api/health', (_, res) => res.json({ status: 'ok', time: new Date().toISOString() }));

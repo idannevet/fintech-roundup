@@ -89,7 +89,21 @@ export const getInvestment = (req: AuthRequest, res: Response): void => {
     balance: portfolio.balance,
     totalInvested: portfolio.total_invested,
     returnPercent: newReturn,
+    riskLevel: portfolio.risk_level || 'moderate',
     profit: parseFloat((portfolio.balance - portfolio.total_invested).toFixed(2)),
     updatedAt: portfolio.updated_at,
   });
+};
+
+export const updateRiskLevel = (req: AuthRequest, res: Response): void => {
+  const { riskLevel } = req.body;
+  const valid = ['conservative', 'moderate', 'aggressive'];
+  if (!valid.includes(riskLevel)) {
+    res.status(400).json({ error: 'Invalid risk level' });
+    return;
+  }
+  db.prepare('UPDATE investment_portfolios SET risk_level = ?, updated_at = datetime(\'now\') WHERE user_id = ?')
+    .run(riskLevel, req.user!.userId);
+  const portfolio = db.prepare('SELECT * FROM investment_portfolios WHERE user_id = ?').get(req.user!.userId) as any;
+  res.json({ riskLevel: portfolio.risk_level });
 };

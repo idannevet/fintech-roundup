@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { TrendingUp, CreditCard, Zap, ChevronRight, RefreshCw } from 'lucide-react';
+import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 import { useAuthStore } from '../../store/authStore';
 import { useAppStore } from '../../store/appStore';
 import { walletService } from '../../services/wallet';
@@ -22,27 +23,68 @@ const categoryEmoji: Record<string, string> = {
   Coffee: '☕', Fitness: '💪', Other: '💳',
 };
 
+function projectGrowth(principal: number, monthlyContrib: number, years: number, annualRate: number) {
+  const r = annualRate / 12;
+  const n = years * 12;
+  if (r === 0) return { futureValue: Math.round(principal + monthlyContrib * n), points: [] };
+  const futureValue = principal * Math.pow(1 + r, n) + monthlyContrib * (Math.pow(1 + r, n) - 1) / r;
+  const step = Math.max(1, Math.floor(n / 24));
+  const points = [];
+  for (let m = 0; m <= n; m += step) {
+    const fv = principal * Math.pow(1 + r, m) + monthlyContrib * (Math.pow(1 + r, m) - 1) / r;
+    points.push({ m, value: Math.round(fv) });
+  }
+  return { futureValue: Math.round(futureValue), points };
+}
+
+function calcStreak(txs: Transaction[]): number {
+  if (!txs.length) return 0;
+  const days = new Set(txs.map(t => t.created_at.split('T')[0]));
+  let streak = 0;
+  const today = new Date();
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const key = d.toISOString().split('T')[0];
+    if (days.has(key)) streak++;
+    else break;
+  }
+  return streak;
+}
+
+const MILESTONES = [
+  { label: '₪50', value: 50 },
+  { label: '₪100', value: 100 },
+  { label: '₪500', value: 500 },
+  { label: '₪1K', value: 1000 },
+];
+
 export default function DashboardScreen() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { cards, wallet, setCards, setWallet } = useAppStore();
   const [history, setHistory] = useState<WalletHistory[]>([]);
   const [recentTx, setRecentTx] = useState<Transaction[]>([]);
+  const [allTx, setAllTx] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [simulating, setSimulating] = useState(false);
+  const [projMonthly, setProjMonthly] = useState(100);
+  const [projYears, setProjYears] = useState(10);
 
   const load = useCallback(async () => {
     try {
-      const [walletData, cardsData, histData, txData] = await Promise.all([
+      const [walletData, cardsData, histData, txData, allTxData] = await Promise.all([
         walletService.getSummary(),
         cardsService.getCards(),
         walletService.getHistory(14),
         transactionsService.getTransactions({ limit: 5 }),
+        transactionsService.getTransactions({ limit: 500 }),
       ]);
       setWallet(walletData);
       setCards(cardsData);
       setHistory(histData);
       setRecentTx(txData.transactions);
+      setAllTx(allTxData.transactions);
     } catch (err) {
       console.error(err);
     } finally {
@@ -74,6 +116,10 @@ export default function DashboardScreen() {
     return 'Good evening';
   };
 
+  const streak = calcStreak(allTx);
+  const totalSaved = wallet?.total_balance || 0;
+  const { futureValue, points } = projectGrowth(totalSaved, projMonthly, projYears, 0.07);
+
   if (loading) return (
     <div className="flex items-center justify-center min-h-dvh">
       <div className="w-8 h-8 rounded-full border-2 border-neon-purple border-t-transparent animate-spin" />
@@ -89,10 +135,20 @@ export default function DashboardScreen() {
           <p className="text-text-secondary text-sm">{greeting()},</p>
           <h1 className="text-xl font-bold text-white">{user?.first_name} {user?.last_name} 👋</h1>
         </div>
-        <motion.button onClick={load} whileTap={{ scale: 0.9 }}
-          className="w-10 h-10 glass-card flex items-center justify-center text-text-secondary hover:text-white">
-          <RefreshCw size={16} />
-        </motion.button>
+        <div className="flex items-center gap-2">
+          {streak > 0 && (
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-500/15 border border-orange-500/25">
+              <span className="text-sm">🔥</span>
+              <span className="text-orange-400 text-xs font-bold">{streak}d streak</span>
+            </motion.div>
+          )}
+          <motion.button onClick={load} whileTap={{ scale: 0.9 }}
+            className="w-10 h-10 glass-card flex items-center justify-center text-text-secondary hover:text-white">
+            <RefreshCw size={16} />
+          </motion.button>
+        </div>
       </motion.div>
 
       {/* Main Balance Card */}
@@ -104,7 +160,7 @@ export default function DashboardScreen() {
           <div className="flex items-start justify-between mb-4">
             <div>
               <p className="text-white/50 text-xs uppercase tracking-widest font-medium mb-1">Total Saved</p>
-              <h2 className="text-4xl font-black text-white">₪{(wallet?.total_balance || 0).toFixed(2)}</h2>
+              <h2 className="text-4xl font-black text-white">₪{totalSaved.toFixed(2)}</h2>
               <p className="text-neon-green text-sm font-medium mt-1 flex items-center gap-1">
                 <TrendingUp size={14} />₪{(wallet?.monthly_balance || 0).toFixed(2)} this month
               </p>
@@ -125,6 +181,26 @@ export default function DashboardScreen() {
         </div>
       </motion.div>
 
+      {/* Milestones */}
+      <motion.div variants={item} className="glass-card p-4 space-y-2">
+        <p className="text-text-secondary text-xs uppercase tracking-wider font-medium">Milestones</p>
+        <div className="flex gap-2">
+          {MILESTONES.map(m => {
+            const reached = totalSaved >= m.value;
+            return (
+              <div key={m.value} className={`flex-1 py-2 rounded-xl text-center transition-all ${
+                reached
+                  ? 'bg-neon-green/15 border border-neon-green/40 text-neon-green'
+                  : 'bg-white/5 border border-white/10 text-text-muted'
+              }`}>
+                <div className="text-base">{reached ? '✅' : '⬜'}</div>
+                <div className="text-[10px] font-semibold mt-0.5">{m.label}</div>
+              </div>
+            );
+          })}
+        </div>
+      </motion.div>
+
       {/* Stats Row */}
       <motion.div variants={item} className="grid grid-cols-3 gap-3">
         {[
@@ -138,6 +214,66 @@ export default function DashboardScreen() {
             <div className="text-text-muted text-[10px] mt-0.5">{s.label}</div>
           </div>
         ))}
+      </motion.div>
+
+      {/* Growth Projection Widget */}
+      <motion.div variants={item} className="glass-card p-5 space-y-4"
+        style={{ border: '1px solid rgba(0,200,150,0.15)' }}>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-white font-semibold text-sm">Growth Projection</h3>
+            <p className="text-text-muted text-xs">7% annual return (estimated)</p>
+          </div>
+          <div className="text-right">
+            <p className="text-neon-green font-black text-lg">₪{futureValue.toLocaleString()}</p>
+            <p className="text-text-muted text-[10px]">in {projYears} yr{projYears > 1 ? 's' : ''}</p>
+          </div>
+        </div>
+
+        <ResponsiveContainer width="100%" height={80}>
+          <AreaChart data={points} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id="projGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#00C896" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#00C896" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <Tooltip
+              content={({ active, payload }) =>
+                active && payload?.length ? (
+                  <div className="glass-card px-2 py-1 text-xs">
+                    <span className="text-neon-green font-semibold">₪{(payload[0].value as number).toLocaleString()}</span>
+                  </div>
+                ) : null
+              }
+            />
+            <Area type="monotone" dataKey="value" stroke="#00C896" strokeWidth={2} fill="url(#projGradient)" dot={false} />
+          </AreaChart>
+        </ResponsiveContainer>
+
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <div className="flex justify-between">
+              <span className="text-text-muted text-xs">Monthly contribution</span>
+              <span className="text-white text-xs font-semibold">₪{projMonthly}</span>
+            </div>
+            <input type="range" min={10} max={500} step={10} value={projMonthly}
+              onChange={e => setProjMonthly(Number(e.target.value))}
+              className="w-full h-1.5 rounded-full appearance-none bg-white/10 accent-neon-green" />
+          </div>
+          <div className="flex gap-2">
+            {[1, 5, 10, 20].map(y => (
+              <button key={y} onClick={() => setProjYears(y)}
+                className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                  projYears === y
+                    ? 'bg-neon-green/20 border border-neon-green/50 text-neon-green'
+                    : 'bg-white/5 border border-white/10 text-text-muted hover:text-white'
+                }`}>
+                {y}yr
+              </button>
+            ))}
+          </div>
+        </div>
       </motion.div>
 
       {/* Savings Chart */}
@@ -232,20 +368,20 @@ export default function DashboardScreen() {
 
       {/* Quick Actions */}
       <motion.div variants={item} className="grid grid-cols-2 gap-3">
-        <motion.button onClick={() => navigate('/wallet')} whileTap={{ scale: 0.97 }}
+        <motion.button onClick={() => navigate('/goals')} whileTap={{ scale: 0.97 }}
           className="glass-card p-4 flex items-center gap-3 hover:border-neon-green/30 transition-colors">
-          <div className="w-10 h-10 rounded-2xl bg-neon-green/10 flex items-center justify-center text-lg">💰</div>
+          <div className="w-10 h-10 rounded-2xl bg-neon-green/10 flex items-center justify-center text-lg">🎯</div>
           <div className="text-left">
-            <p className="text-white text-sm font-semibold">Wallet</p>
-            <p className="text-text-muted text-xs">View savings</p>
+            <p className="text-white text-sm font-semibold">Goals</p>
+            <p className="text-text-muted text-xs">Track targets</p>
           </div>
         </motion.button>
         <motion.button onClick={() => navigate('/transfers')} whileTap={{ scale: 0.97 }}
           className="glass-card p-4 flex items-center gap-3 hover:border-neon-blue/30 transition-colors">
-          <div className="w-10 h-10 rounded-2xl bg-neon-blue/10 flex items-center justify-center text-lg">↗️</div>
+          <div className="w-10 h-10 rounded-2xl bg-neon-blue/10 flex items-center justify-center text-lg">📈</div>
           <div className="text-left">
-            <p className="text-white text-sm font-semibold">Transfer</p>
-            <p className="text-text-muted text-xs">Move funds</p>
+            <p className="text-white text-sm font-semibold">Invest</p>
+            <p className="text-text-muted text-xs">Grow funds</p>
           </div>
         </motion.button>
       </motion.div>

@@ -1,12 +1,12 @@
 import { NavLink } from 'react-router-dom';
-import { Home, CreditCard, Wallet, ArrowLeftRight, Settings } from 'lucide-react';
+import { Home, CreditCard, Target, TrendingUp, Settings } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const tabs = [
   { to: '/', icon: Home, label: 'Home' },
   { to: '/cards', icon: CreditCard, label: 'Cards' },
-  { to: '/wallet', icon: Wallet, label: 'Wallet' },
-  { to: '/transfers', icon: ArrowLeftRight, label: 'Transfer' },
+  { to: '/goals', icon: Target, label: 'Goals' },
+  { to: '/transfers', icon: TrendingUp, label: 'Invest' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 

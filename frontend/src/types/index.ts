@@ -89,10 +89,32 @@ export interface InvestmentPortfolio {
   balance: number;
   total_invested: number;
   return_percent: number;
+  risk_level: 'conservative' | 'moderate' | 'aggressive';
   created_at: string;
 }
 
 export interface RoundingConfig {
   is_enabled: boolean;
   rounding_unit: number;
+  multiplier: number;
+}
+
+export interface Goal {
+  id: string;
+  name: string;
+  emoji: string;
+  targetAmount: number;
+  currentAmount: number;
+  deadline?: string;
+  isCompleted: boolean;
+  createdAt: string;
+}
+
+export interface RecurringDeposit {
+  id: string;
+  amount: number;
+  frequency: 'daily' | 'weekly' | 'monthly';
+  nextDate: string;
+  isActive: boolean;
+  createdAt: string;
 }
